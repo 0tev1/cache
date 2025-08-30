@@ -1,0 +1,407 @@
+
+-- setting up framework
+
+local Framework = {}
+
+Framework.Config = {
+	Prefix = "/";
+	Version = "1.0";
+	
+	SS = game:GetService("RunService"):IsServer()
+}
+
+-- setting up engine 
+
+Framework.Engine = {}
+
+function Framework.SecureConnection(connection, index)
+	if index then 
+		Framework.Engine[index] = connection 
+	else 
+		table.insert(Framework.Engine, connection)
+	end; return connection
+end
+
+function Framework.Disconnect(index)
+	if index then 
+		Framework.Engine[index] = Framework.Engine[index]:Disconnect()
+	else 
+		for _, c in next, Framework.Engine do 
+			c:Disconnect()
+		end
+	end
+end
+
+function Framework:GetConnections()
+	return self.Engine
+end
+
+-- parsing and getplayer functions 
+
+function Framework.ParseMessage(msg)
+	if msg:sub(1, #Framework.Config.Prefix) == Framework.Config.Prefix then
+		msg = msg:gsub(Framework.Config.Prefix, ""):lower()
+		local Arguments = msg:split(" ")
+		local Command = Arguments[1]
+		table.remove(Arguments, 1)
+		return Command, Arguments
+	end
+end
+
+function Framework.GetPlayers(sender, str)
+	str = str:lower()
+	
+	if str == "all" then 
+		return game:GetService("Players"):GetPlayers()
+	end
+	
+	if str == "others" then 
+		local others = {}
+		for _, x in next, game:GetService("Players"):GetPlayers() do 
+			if x ~= sender then 
+				table.insert(others, x)
+			end
+		end; return others	
+	end
+	
+	if str == "me" then 
+		return {sender}
+	end
+	
+	for _, x in next, game:GetService("Players"):GetPlayers() do 
+		if x.Name:sub(1, #str):lower() == str or x.DisplayName:sub(1, #str):lower() == str then 
+			return {x}
+		end
+	end
+end
+
+-- setting up commands
+
+Framework.Commands = {}
+
+function Framework.CreateCommand(alias, desc, callback, ssrequired)
+	local Alias = alias or {"Alias"}
+	local Description = desc or "Description"
+	local Callback = callback or function() end
+	local SSRequired = ssrequired or false
+	
+	return table.insert(Framework.Commands, {Alias, Description, Callback, SSRequired})
+end
+
+function Framework:GetCommands()
+	return self.Commands
+end
+
+function Framework:GetCommand(alias)
+	for _, cmdData in next, Framework.Commands do 
+		if table.find(cmdData[1], alias) then 
+			return cmdData
+		end
+	end; return
+end
+
+function Framework:CallCommand(player, alias, args)
+	for _, cmdData in next, Framework.Commands do 
+		if table.find(cmdData[1], alias) then 
+			cmdData[3](player, unpack(args))
+			break
+		end
+	end; return
+end
+
+-- command creation 
+
+Framework.CreateCommand({"jumppower", "jp"}, "Changes player jump power", function(Sender, Argument1, Argument2)
+	local Targets 
+
+	if Argument2 then 
+		Targets = Framework.GetPlayers(Sender, Argument2)
+	else 
+		Targets = {Sender}
+	end
+
+
+	local Jumppower = tonumber(Argument1) or 50
+
+	for _, Target in next, Targets do 
+		local Character = Target.Character or Target.CharacterAdded:wait()
+		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+		Humanoid.JumpPower = Jumppower
+	end
+end, true)
+
+Framework.CreateCommand({"walkspeed", "ws"}, "Changes player walk speed", function(Sender, Argument1, Argument2)
+	local Targets 
+	
+	if Argument2 then 
+		Targets = Framework.GetPlayers(Sender, Argument2)
+	else 
+		Targets = {Sender}
+	end
+	
+	
+	local Walkspeed = tonumber(Argument1) or 16
+	
+	for _, Target in next, Targets do 
+		local Character = Target.Character or Target.CharacterAdded:wait()
+		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+		
+		Humanoid.WalkSpeed = Walkspeed
+	end
+end, true)
+
+Framework.CreateCommand({"sit"}, "Forces player to sit", function(Sender, Argument)
+	local Targets 
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	else 
+		Targets = {Sender}
+	end
+
+	if Targets then 
+		for _, Target in next, Targets do 
+			local Character = Target.Character or Target.CharacterAdded:wait()
+			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+			
+			if Humanoid then 
+				Humanoid.Sit = true
+			end
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"shoobicorn", "shoobi", "unicorn", "uni"}, "Gives player a shoobicorn", function(Sender, Argument)
+	local Targets 
+	
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	else 
+		Targets = {Sender}
+	end
+	
+	if Targets then 
+		for _, Target in next, Targets do 
+			local Shoobicorn = game:GetService("ServerStorage"):WaitForChild("Tools").Shoobicorn:Clone()
+			Shoobicorn.Parent = Target.Backpack
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"kfling", "kf"}, "Kills target then flings them into the sky", function(Sender, Argument)
+	local Targets
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	end
+
+	if Targets then 
+		for _, Target in next, Targets do 
+
+			local Character = Target.Character or Target.CharacterAdded:wait()
+			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+			local PrimaryPart = Character.HumanoidRootPart
+
+			if not PrimaryPart then return end
+
+			Humanoid.Health = 0
+
+			PrimaryPart.Velocity = Vector3.new(math.random(800, 1800), math.random(1000, 2000), math.random(800, 1800))
+			PrimaryPart.RotVelocity = Vector3.new(math.random(800, 1800), math.random(1000, 2000), math.random(800, 1800))
+
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"fling", "f"}, "Flings target into the sky", function(Sender, Argument)
+	local Targets
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	else 
+		Targets = {Sender}
+	end
+
+	if Targets then 
+		for _, Target in next, Targets do 
+
+			local Character = Target.Character or Target.CharacterAdded:wait()
+			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+			local PrimaryPart = Character.PrimaryPart
+
+			if not PrimaryPart then return end
+			
+			Humanoid.Sit = true
+			
+			PrimaryPart.Velocity = Vector3.new(math.random(500, 1000), math.random(1000, 1500), math.random(500, 1000))
+			PrimaryPart.RotVelocity = Vector3.new(math.random(500, 1000), math.random(1000, 1500), math.random(500, 1000))
+
+
+			coroutine.wrap(function()
+				task.wait(.5)
+				Humanoid.Sit = false
+			end)()
+
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"reset", "re"}, "Resets target character", function(Sender, Argument)
+	local Targets
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	else 
+		Targets = {Sender}
+	end
+
+	if Targets then 
+		for _, Target in next, Targets do 
+			
+			local Character = Target.Character or Target.CharacterAdded:wait()
+			local PrimaryPart = Character.PrimaryPart
+			
+			if not PrimaryPart then return end
+			
+			local ReturnCFrame = PrimaryPart.CFrame 
+			Target:LoadCharacter()
+			Target.CharacterAppearanceLoaded:wait()
+			Target.Character:SetPrimaryPartCFrame(ReturnCFrame)
+			
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"kill"}, "Kills target", function(Sender, Argument)
+	local Targets
+	
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	end
+	
+	if Targets then 
+		for _, Target in next, Targets do 
+			
+			local Character = Target.Character or Target.CharacterAdded:wait()
+			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+			
+			if Humanoid then 
+				Humanoid.Health = 0
+			end
+			
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"bring"}, "Brings a target to you", function(Sender, Argument)
+	local Targets
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	end
+
+	if Targets then 
+		for Index, Target in ipairs(Targets) do 
+
+			local SenderCharacter = Sender.Character or Sender.CharacterAdded:wait()
+			local SenderPart = SenderCharacter.PrimaryPart
+
+			local Character = Target.Character or Target.CharacterAdded:wait()
+			local PrimaryPart = Character.PrimaryPart
+
+
+			for i = 1, 5 do 
+				for _, x in next, Character:GetChildren() do 
+					if x:IsA("BasePart") or x:IsA("Part") or x:IsA("MeshPart") then 
+						x.Velocity = Vector3.new()
+						x.RotVelocity = Vector3.new()
+					end
+				end; task.wait()
+			end 
+
+			if PrimaryPart and SenderPart then 
+				Character:SetPrimaryPartCFrame(SenderPart.CFrame * CFrame.new(Index, 0, 0))
+			end
+
+		end
+	end
+	
+end, true)
+
+Framework.CreateCommand({"goto", "to"}, "Teleport yourself to a target", function(Sender, Argument)
+	local Targets
+	
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	end
+	
+	if Targets then 
+		for _, Target in next, Targets do 
+			
+			local SenderCharacter = Sender.Character or Sender.CharacterAdded:wait()
+			local SenderPart = SenderCharacter.PrimaryPart
+			
+			local Character = Target.Character or Target.CharacterAdded:wait()
+			local PrimaryPart = Character.PrimaryPart
+			
+			for i = 1, 5 do 
+				for _, x in next, SenderCharacter:GetChildren() do 
+					if x:IsA("BasePart") or x:IsA("Part") or x:IsA("MeshPart") then 
+						x.Velocity = Vector3.new()
+						x.RotVelocity = Vector3.new()
+					end
+				end; task.wait()
+			end 
+			
+			if PrimaryPart and SenderPart then 
+				SenderCharacter:SetPrimaryPartCFrame(PrimaryPart.CFrame * CFrame.new(4, 0, 0))
+			end
+			
+		end
+	end
+	
+end, false)
+
+Framework.CreateCommand({"unview", "unv"}, "Stops spectating target", function(Sender)
+	
+	local CurrentCamera = workspace["CurrentCamera"]
+	local Character = Sender.Character or Sender.CharacterAdded:wait() 
+	
+	if Character and Character:FindFirstChildOfClass("Humanoid") then 
+		CurrentCamera.CameraSubject = Character:FindFirstChildOfClass("Humanoid")
+	end
+	
+end, false)
+
+Framework.CreateCommand({"view", "v"}, "Spectates target", function(Sender, Argument)
+	local Target
+	
+	if Argument then 
+		Target = Framework.GetPlayers(Sender, Argument)[1]
+	else 
+		Target = false
+	end
+	
+	local CurrentCamera = workspace["CurrentCamera"]
+	
+	if Target then 
+		
+		local Character = Target.Character or Target.CharacterAdded:wait()
+		
+		if Character and Character:FindFirstChild("Head") then 
+			CurrentCamera.CameraSubject = Character:FindFirstChild("Head")
+		end
+		
+	else 
+		
+		local Character = Sender.Character or Sender.CharacterAdded:wait()
+		
+		if Character and Character:FindFirstChildOfClass("Humanoid") then
+			CurrentCamera.CameraSubject = Character:FindFirstChildOfClass("Humanoid")
+		end
+		
+	end
+end, false)
+
+return Framework
