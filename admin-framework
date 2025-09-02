@@ -5,8 +5,8 @@ local Framework = {}
 
 Framework.Config = {
 	Prefix = "/";
-	Version = "1.0";
-	
+	Version = "1.15";
+
 	SS = game:GetService("RunService"):IsServer()
 }
 
@@ -50,11 +50,11 @@ end
 
 function Framework.GetPlayers(sender, str)
 	str = str:lower()
-	
+
 	if str == "all" then 
 		return game:GetService("Players"):GetPlayers()
 	end
-	
+
 	if str == "others" then 
 		local others = {}
 		for _, x in next, game:GetService("Players"):GetPlayers() do 
@@ -63,11 +63,11 @@ function Framework.GetPlayers(sender, str)
 			end
 		end; return others	
 	end
-	
+
 	if str == "me" then 
 		return {sender}
 	end
-	
+
 	for _, x in next, game:GetService("Players"):GetPlayers() do 
 		if x.Name:sub(1, #str):lower() == str or x.DisplayName:sub(1, #str):lower() == str then 
 			return {x}
@@ -84,7 +84,7 @@ function Framework.CreateCommand(alias, desc, callback, ssrequired)
 	local Description = desc or "Description"
 	local Callback = callback or function() end
 	local SSRequired = ssrequired or false
-	
+
 	return table.insert(Framework.Commands, {Alias, Description, Callback, SSRequired})
 end
 
@@ -133,20 +133,20 @@ end, true)
 
 Framework.CreateCommand({"walkspeed", "ws"}, "Changes player walk speed", function(Sender, Argument1, Argument2)
 	local Targets 
-	
+
 	if Argument2 then 
 		Targets = Framework.GetPlayers(Sender, Argument2)
 	else 
 		Targets = {Sender}
 	end
-	
-	
+
+
 	local Walkspeed = tonumber(Argument1) or 16
-	
+
 	for _, Target in next, Targets do 
 		local Character = Target.Character or Target.CharacterAdded:wait()
 		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-		
+
 		Humanoid.WalkSpeed = Walkspeed
 	end
 end, true)
@@ -164,7 +164,7 @@ Framework.CreateCommand({"sit"}, "Forces player to sit", function(Sender, Argume
 		for _, Target in next, Targets do 
 			local Character = Target.Character or Target.CharacterAdded:wait()
 			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-			
+
 			if Humanoid then 
 				Humanoid.Sit = true
 			end
@@ -172,28 +172,13 @@ Framework.CreateCommand({"sit"}, "Forces player to sit", function(Sender, Argume
 	end
 end, true)
 
-Framework.CreateCommand({"shoobicorn", "shoobi", "unicorn", "uni"}, "Gives player a shoobicorn", function(Sender, Argument)
-	local Targets 
-	
-	if Argument then 
-		Targets = Framework.GetPlayers(Sender, Argument)
-	else 
-		Targets = {Sender}
-	end
-	
-	if Targets then 
-		for _, Target in next, Targets do 
-			local Shoobicorn = game:GetService("ServerStorage"):WaitForChild("Tools").Shoobicorn:Clone()
-			Shoobicorn.Parent = Target.Backpack
-		end
-	end
-end, true)
-
-Framework.CreateCommand({"kfling", "kf"}, "Kills target then flings them into the sky", function(Sender, Argument)
+Framework.CreateCommand({"killfling", "kfling", "kf"}, "Flings target into the sky", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
 		Targets = Framework.GetPlayers(Sender, Argument)
+	else 
+		Targets = {Sender}
 	end
 
 	if Targets then 
@@ -201,14 +186,26 @@ Framework.CreateCommand({"kfling", "kf"}, "Kills target then flings them into th
 
 			local Character = Target.Character or Target.CharacterAdded:wait()
 			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-			local PrimaryPart = Character.HumanoidRootPart
-
-			if not PrimaryPart then return end
+			local RootPart = Humanoid.RootPart
 
 			Humanoid.Health = 0
+			Humanoid.Jump = true
+			Humanoid.Sit = false
 
-			PrimaryPart.Velocity = Vector3.new(math.random(800, 1800), math.random(1000, 2000), math.random(800, 1800))
-			PrimaryPart.RotVelocity = Vector3.new(math.random(800, 1800), math.random(1000, 2000), math.random(800, 1800))
+			if RootPart then 
+				local BV = Instance.new("BodyVelocity", RootPart)
+
+				BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+				BV.P = math.huge
+
+				BV.Velocity = Vector3.new(math.random(-500, 500), math.random(250, 500), math.random(-500, 500))
+				
+				coroutine.wrap(function()
+					wait(.5)
+					BV:Destroy()
+				end)()
+				
+			end
 
 		end
 	end
@@ -228,24 +225,52 @@ Framework.CreateCommand({"fling", "f"}, "Flings target into the sky", function(S
 
 			local Character = Target.Character or Target.CharacterAdded:wait()
 			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-			local PrimaryPart = Character.PrimaryPart
+			local RootPart = Humanoid.RootPart
 
-			if not PrimaryPart then return end
-			
-			Humanoid.Sit = true
-			
-			PrimaryPart.Velocity = Vector3.new(math.random(500, 1000), math.random(1000, 1500), math.random(500, 1000))
-			PrimaryPart.RotVelocity = Vector3.new(math.random(500, 1000), math.random(1000, 1500), math.random(500, 1000))
+			Humanoid.Jump = true
 
-
-			coroutine.wrap(function()
-				task.wait(.5)
-				Humanoid.Sit = false
-			end)()
+			if RootPart then 
+				local BV = Instance.new("BodyVelocity", RootPart)
+				local BAV = Instance.new("BodyAngularVelocity", RootPart)
+				
+				BAV.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+				BAV.P = math.random(250, 500)
+				
+				BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+				BV.P = math.huge
+				
+				BV.Velocity = Vector3.new(math.random(-500, 500), math.random(250, 500), math.random(-500, 500))
+				BAV.AngularVelocity = Vector3.new(math.random(-500, 500), math.random(250, 500), math.random(-500, 500))	
+				
+				coroutine.wrap(function()
+					wait(.5)
+					BV:Destroy()
+					BAV:Destroy()
+				end)()
+				
+			end
 
 		end
 	end
 end, true)
+
+Framework.CreateCommand({"noclip", "nc"}, "Toggles noclip", function(Sender)
+
+	if Framework.Engine["NoclipConnection"] then
+		return Framework.Disconnect("NoclipConnection")
+	end
+	
+	Framework.SecureConnection(game:GetService("RunService").RenderStepped:Connect(function()
+		local Character = Sender.Character or Sender.CharacterAdded:wait()
+		
+		for _, x in next, Character:GetChildren() do 
+			if x:IsA("BasePart") or x:IsA("MeshPart") or x:IsA("Part") then
+				x.CanCollide = false
+			end
+		end
+	end), "NoclipConnection")
+
+end, false)
 
 Framework.CreateCommand({"reset", "re"}, "Resets target character", function(Sender, Argument)
 	local Targets
@@ -258,23 +283,57 @@ Framework.CreateCommand({"reset", "re"}, "Resets target character", function(Sen
 
 	if Targets then 
 		for _, Target in next, Targets do 
-			
+
 			local Character = Target.Character or Target.CharacterAdded:wait()
 			local PrimaryPart = Character.PrimaryPart
-			
+
 			if not PrimaryPart then return end
+
+			local ReturnCFrame = PrimaryPart.CFrame
 			
-			local ReturnCFrame = PrimaryPart.CFrame 
 			Target:LoadCharacter()
-			Target.CharacterAppearanceLoaded:wait()
-			Target.Character:SetPrimaryPartCFrame(ReturnCFrame)
 			
+			local Character = Target.Character or Target.CharacterAdded:wait()
+			repeat task.wait() until Character.PrimaryPart
+			
+			Character:SetPrimaryPartCFrame(ReturnCFrame)
+
 		end
 	end
 end, true)
 
-Framework.CreateCommand({"kill"}, "Kills target", function(Sender, Argument)
-	local Targets
+Framework.CreateCommand({"light", "fire", "set"}, "Set a target on fire", function(Sender, Argument)
+	local Targets 
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	end
+
+	if Targets then 
+		for _, Target in next, Targets do 
+			if Target.Character and Target.Character:FindFirstChildWhichIsA("Humanoid") then 
+				
+				local Humanoid = Target.Character:FindFirstChildWhichIsA("Humanoid")
+				local HumanoidRootPart = Humanoid.RootPart
+				
+				local Flame = Instance.new("Fire", HumanoidRootPart)
+				Flame.Heat = 150
+				Flame.Size = 15
+				
+				coroutine.wrap(function()
+					for i = Humanoid.Health, 0, -1 do 
+						Humanoid.Health = i
+						task.wait()
+					end
+				end)()
+				
+			end
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"explode"}, "Explode a target", function(Sender, Argument)
+	local Targets 
 	
 	if Argument then 
 		Targets = Framework.GetPlayers(Sender, Argument)
@@ -282,14 +341,32 @@ Framework.CreateCommand({"kill"}, "Kills target", function(Sender, Argument)
 	
 	if Targets then 
 		for _, Target in next, Targets do 
-			
+			if Target.Character and Target.Character.PrimaryPart then 
+				local Explosion = Instance.new("Explosion", workspace)
+				Explosion.Position = Target.Character.PrimaryPart.Position
+				Explosion.BlastRadius = 10
+			end
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"kill"}, "Kill a target", function(Sender, Argument)
+	local Targets
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	end
+
+	if Targets then 
+		for _, Target in next, Targets do 
+
 			local Character = Target.Character or Target.CharacterAdded:wait()
 			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-			
+
 			if Humanoid then 
 				Humanoid.Health = 0
 			end
-			
+
 		end
 	end
 end, true)
@@ -321,30 +398,34 @@ Framework.CreateCommand({"bring"}, "Brings a target to you", function(Sender, Ar
 			end 
 
 			if PrimaryPart and SenderPart then 
-				Character:SetPrimaryPartCFrame(SenderPart.CFrame * CFrame.new(Index, 0, 0))
+				if (Index % 2 == 0) then 
+					Character:SetPrimaryPartCFrame(SenderPart.CFrame * CFrame.new((1 + Index) - 1, 0, 0))
+				else 
+					Character:SetPrimaryPartCFrame(SenderPart.CFrame * CFrame.new((1 - Index) - 1, 0, 0))
+				end 
 			end
 
 		end
 	end
-	
+
 end, true)
 
 Framework.CreateCommand({"goto", "to"}, "Teleport yourself to a target", function(Sender, Argument)
 	local Targets
-	
+
 	if Argument then 
 		Targets = Framework.GetPlayers(Sender, Argument)
 	end
-	
+
 	if Targets then 
 		for _, Target in next, Targets do 
-			
+
 			local SenderCharacter = Sender.Character or Sender.CharacterAdded:wait()
 			local SenderPart = SenderCharacter.PrimaryPart
-			
+
 			local Character = Target.Character or Target.CharacterAdded:wait()
 			local PrimaryPart = Character.PrimaryPart
-			
+
 			for i = 1, 5 do 
 				for _, x in next, SenderCharacter:GetChildren() do 
 					if x:IsA("BasePart") or x:IsA("Part") or x:IsA("MeshPart") then 
@@ -353,55 +434,66 @@ Framework.CreateCommand({"goto", "to"}, "Teleport yourself to a target", functio
 					end
 				end; task.wait()
 			end 
-			
+
 			if PrimaryPart and SenderPart then 
 				SenderCharacter:SetPrimaryPartCFrame(PrimaryPart.CFrame * CFrame.new(4, 0, 0))
 			end
-			
+
 		end
 	end
-	
+
 end, false)
 
 Framework.CreateCommand({"unview", "unv"}, "Stops spectating target", function(Sender)
-	
+
 	local CurrentCamera = workspace["CurrentCamera"]
 	local Character = Sender.Character or Sender.CharacterAdded:wait() 
-	
+
 	if Character and Character:FindFirstChildOfClass("Humanoid") then 
 		CurrentCamera.CameraSubject = Character:FindFirstChildOfClass("Humanoid")
 	end
-	
+
 end, false)
 
 Framework.CreateCommand({"view", "v"}, "Spectates target", function(Sender, Argument)
 	local Target
-	
+
 	if Argument then 
 		Target = Framework.GetPlayers(Sender, Argument)[1]
 	else 
 		Target = false
 	end
-	
+
 	local CurrentCamera = workspace["CurrentCamera"]
-	
+
 	if Target then 
-		
+
 		local Character = Target.Character or Target.CharacterAdded:wait()
-		
+
 		if Character and Character:FindFirstChild("Head") then 
 			CurrentCamera.CameraSubject = Character:FindFirstChild("Head")
 		end
-		
+
 	else 
-		
+
 		local Character = Sender.Character or Sender.CharacterAdded:wait()
-		
+
 		if Character and Character:FindFirstChildOfClass("Humanoid") then
 			CurrentCamera.CameraSubject = Character:FindFirstChildOfClass("Humanoid")
 		end
-		
+
 	end
 end, false)
+
+if Framework.Config.SS then 
+	
+	warn("Loaded Sy's Admin Library")
+	warn("Version : " .. Framework.Config.Version)
+	warn("-----------------------------------------------")
+	
+	for _, cmdData in next, Framework:GetCommands() do 
+		warn(table.concat(cmdData[1], "/") .. " : " .. cmdData[2])
+	end
+end
 
 return Framework
