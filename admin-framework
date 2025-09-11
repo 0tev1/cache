@@ -5,7 +5,7 @@ local Framework = {}
 
 Framework.Config = {
 	Prefix = "/";
-	Version = "1.15";
+	Version = "v1.6";
 
 	SS = game:GetService("RunService"):IsServer()
 }
@@ -85,11 +85,19 @@ function Framework.CreateCommand(alias, desc, callback, ssrequired)
 	local Callback = callback or function() end
 	local SSRequired = ssrequired or false
 
-	return table.insert(Framework.Commands, {Alias, Description, Callback, SSRequired})
+	table.insert(Framework.Commands, {Alias, Description, Callback, SSRequired})
 end
 
 function Framework:GetCommands()
-	return self.Commands
+	
+	local Commands = {}
+
+	for _, CData in next, Framework.Commands do 
+		table.insert(Commands, table.concat(CData[1], "/") .. " : " .. CData[2])
+		table.sort(Commands)
+	end
+
+	return Commands
 end
 
 function Framework:GetCommand(alias)
@@ -199,12 +207,12 @@ Framework.CreateCommand({"killfling", "kfling", "kf"}, "Flings target into the s
 				BV.P = math.huge
 
 				BV.Velocity = Vector3.new(math.random(-500, 500), math.random(250, 500), math.random(-500, 500))
-				
+
 				coroutine.wrap(function()
 					wait(.5)
 					BV:Destroy()
 				end)()
-				
+
 			end
 
 		end
@@ -232,22 +240,22 @@ Framework.CreateCommand({"fling", "f"}, "Flings target into the sky", function(S
 			if RootPart then 
 				local BV = Instance.new("BodyVelocity", RootPart)
 				local BAV = Instance.new("BodyAngularVelocity", RootPart)
-				
+
 				BAV.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
 				BAV.P = math.random(250, 500)
-				
+
 				BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
 				BV.P = math.huge
-				
+
 				BV.Velocity = Vector3.new(math.random(-500, 500), math.random(250, 500), math.random(-500, 500))
 				BAV.AngularVelocity = Vector3.new(math.random(-500, 500), math.random(250, 500), math.random(-500, 500))	
-				
+
 				coroutine.wrap(function()
 					wait(.5)
 					BV:Destroy()
 					BAV:Destroy()
 				end)()
-				
+
 			end
 
 		end
@@ -259,10 +267,10 @@ Framework.CreateCommand({"noclip", "nc"}, "Toggles noclip", function(Sender)
 	if Framework.Engine["NoclipConnection"] then
 		return Framework.Disconnect("NoclipConnection")
 	end
-	
+
 	Framework.SecureConnection(game:GetService("RunService").RenderStepped:Connect(function()
 		local Character = Sender.Character or Sender.CharacterAdded:wait()
-		
+
 		for _, x in next, Character:GetChildren() do 
 			if x:IsA("BasePart") or x:IsA("MeshPart") or x:IsA("Part") then
 				x.CanCollide = false
@@ -270,6 +278,12 @@ Framework.CreateCommand({"noclip", "nc"}, "Toggles noclip", function(Sender)
 		end
 	end), "NoclipConnection")
 
+end, false)
+
+Framework.CreateCommand({"clip", "unnc"}, "Disables noclip", function()
+	if Framework.Engine["NoclipConnection"] then
+		return Framework.Disconnect("NoclipConnection")
+	end
 end, false)
 
 Framework.CreateCommand({"reset", "re"}, "Resets target character", function(Sender, Argument)
@@ -290,12 +304,12 @@ Framework.CreateCommand({"reset", "re"}, "Resets target character", function(Sen
 			if not PrimaryPart then return end
 
 			local ReturnCFrame = PrimaryPart.CFrame
-			
+
 			Target:LoadCharacter()
-			
+
 			local Character = Target.Character or Target.CharacterAdded:wait()
 			repeat task.wait() until Character.PrimaryPart
-			
+
 			Character:SetPrimaryPartCFrame(ReturnCFrame)
 
 		end
@@ -312,21 +326,21 @@ Framework.CreateCommand({"light", "fire", "set"}, "Set a target on fire", functi
 	if Targets then 
 		for _, Target in next, Targets do 
 			if Target.Character and Target.Character:FindFirstChildWhichIsA("Humanoid") then 
-				
+
 				local Humanoid = Target.Character:FindFirstChildWhichIsA("Humanoid")
 				local HumanoidRootPart = Humanoid.RootPart
-				
+
 				local Flame = Instance.new("Fire", HumanoidRootPart)
 				Flame.Heat = 150
 				Flame.Size = 15
-				
+
 				coroutine.wrap(function()
 					for i = Humanoid.Health, 0, -1 do 
 						Humanoid.Health = i
 						task.wait()
 					end
 				end)()
-				
+
 			end
 		end
 	end
@@ -334,11 +348,11 @@ end, true)
 
 Framework.CreateCommand({"explode"}, "Explode a target", function(Sender, Argument)
 	local Targets 
-	
+
 	if Argument then 
 		Targets = Framework.GetPlayers(Sender, Argument)
 	end
-	
+
 	if Targets then 
 		for _, Target in next, Targets do 
 			if Target.Character and Target.Character.PrimaryPart then 
@@ -409,6 +423,33 @@ Framework.CreateCommand({"bring"}, "Brings a target to you", function(Sender, Ar
 	end
 
 end, true)
+
+Framework.CreateCommand({"clicktp", "ctp"}, "Toggles click teleport", function()
+	
+	if Framework.Engine["ClickTeleport"] then 
+		return Framework.Disconnect("ClickTeleport")
+	end
+	
+	local LocalPlayer = game:GetService("Players").LocalPlayer
+	local Mouse = LocalPlayer:GetMouse()
+	
+	Framework.SecureConnection(Mouse.Button1Down:Connect(function()
+		
+		local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:wait()
+		
+		if Character and Character.PrimaryPart then 
+			Character:SetPrimaryPartCFrame(CFrame.new(Mouse.Hit.p + Vector3.new(0, 2, 0)))
+		end	
+		
+	end), "ClickTeleport")
+	
+end, false)
+
+Framework.CreateCommand({"unclicktp", "unctp"}, "Disables click teleport", function()
+	if Framework.Engine["ClickTeleport"] then 
+		return Framework.Disconnect("ClickTeleport")
+	end
+end, false)
 
 Framework.CreateCommand({"goto", "to"}, "Teleport yourself to a target", function(Sender, Argument)
 	local Targets
@@ -485,14 +526,32 @@ Framework.CreateCommand({"view", "v"}, "Spectates target", function(Sender, Argu
 	end
 end, false)
 
-if Framework.Config.SS then 
+Framework.CreateCommand({"kick"}, "Kicks player from the server", function(Sender, Player, ...)
 	
-	warn("Loaded Sy's Admin Library")
-	warn("Version : " .. Framework.Config.Version)
-	warn("-----------------------------------------------")
+	local Targets
 	
-	for _, cmdData in next, Framework:GetCommands() do 
-		warn(table.concat(cmdData[1], "/") .. " : " .. cmdData[2])
+	if Player then 
+		Targets = Framework.GetPlayers(Sender, Player)
+	end
+	
+	if Targets then 
+		for _, Target in next, Targets do 
+			Target:Kick(table.concat({...}, " "))
+		end
+	end
+	
+end, true)
+
+if not Framework.Config.SS then 
+	
+	warn("Loaded Sy's Admin " .. Framework.Config.Version)
+	warn("Command Prefix : " .. Framework.Config.Prefix)
+	warn("Command Count : " .. tostring(#Framework:GetCommands()))
+	
+	warn(string.rep("-", 50))
+	
+	for _, x in next, Framework:GetCommands() do 
+		warn(x)
 	end
 end
 
