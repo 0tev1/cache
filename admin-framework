@@ -5,7 +5,7 @@ local Framework = {}
 
 Framework.Config = {
 	Prefix = "/";
-	Version = "v1.2.7";
+	Version = "v1.2.8";
 
 	PrintOnExecution = true;
 
@@ -121,7 +121,7 @@ end
 
 -- command creation 
 
-Framework.CreateCommand({"accessory", "hat"}, "Equipes a hat to the localplayer", function(Sender, Argument1)
+Framework.CreateCommand({"accessory", "hat"}, "Equips a hat to the localplayer", function(Sender, Argument1)
 	local ID = tonumber(Argument1) or 0
 	
 	local Character = Sender.Character or Sender.CharacterAdded:wait() 
