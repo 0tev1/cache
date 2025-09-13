@@ -5,7 +5,7 @@ local Framework = {}
 
 Framework.Config = {
 	Prefix = "/";
-	Version = "v1.1.7";
+	Version = "v1.2.7";
 
 	PrintOnExecution = true;
 
@@ -120,6 +120,20 @@ function Framework:CallCommand(player, alias, args)
 end
 
 -- command creation 
+
+Framework.CreateCommand({"accessory", "hat"}, "Equipes a hat to the localplayer", function(Sender, Argument1)
+	local ID = tonumber(Argument1) or 0
+	
+	local Character = Sender.Character or Sender.CharacterAdded:wait() 
+	
+	local Model = game:GetService("InsertService"):LoadAsset(ID)
+	Model.Parent = workspace
+
+	local Accessory = Model:FindFirstChildOfClass("Accessory")
+	Accessory.Parent = Character
+	
+	Model:remove()
+end, true)
 
 Framework.CreateCommand({"headless", "nohead"}, "Gives localplayer headless", function(Sender, Argument1)
 	local Targets
@@ -369,7 +383,7 @@ Framework.CreateCommand({"light", "fire", "set"}, "Sets target on fire", functio
 	end
 end, true)
 
-Framework.CreateCommand({"explode"}, "Explodes a target", function(Sender, Argument)
+Framework.CreateCommand({"explode"}, "Explodes target", function(Sender, Argument)
 	local Targets 
 
 	if Argument then 
@@ -387,7 +401,7 @@ Framework.CreateCommand({"explode"}, "Explodes a target", function(Sender, Argum
 	end
 end, true)
 
-Framework.CreateCommand({"kill"}, "Kills a target", function(Sender, Argument)
+Framework.CreateCommand({"kill"}, "Kills target", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
@@ -408,7 +422,7 @@ Framework.CreateCommand({"kill"}, "Kills a target", function(Sender, Argument)
 	end
 end, true)
 
-Framework.CreateCommand({"bring"}, "Brings a target to you", function(Sender, Argument)
+Framework.CreateCommand({"bring"}, "Brings target to you", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
