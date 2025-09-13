@@ -5,7 +5,9 @@ local Framework = {}
 
 Framework.Config = {
 	Prefix = "/";
-	Version = "v1.6";
+	Version = "v1.1.7";
+
+	PrintOnExecution = true;
 
 	SS = game:GetService("RunService"):IsServer()
 }
@@ -119,7 +121,28 @@ end
 
 -- command creation 
 
-Framework.CreateCommand({"jumppower", "jp"}, "Changes player jump power", function(Sender, Argument1, Argument2)
+Framework.CreateCommand({"headless", "nohead"}, "Gives localplayer headless", function(Sender, Argument1)
+	local Targets
+	
+	if Argument1 then 
+		Targets = Framework.GetPlayers(Sender, Argument1)
+	else 
+		Targets = {Sender}
+	end
+	
+	for _, Target in next, Targets do 
+		if Target and Target.Character then 
+			for _, x in next, Target.Character:GetChildren() do 
+				if x.Name == "Head" then 
+					x.Transparency = 1
+					x.face:Destroy()
+				end
+			end
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"jumppower", "jp"}, "Changes target's jump power", function(Sender, Argument1, Argument2)
 	local Targets 
 
 	if Argument2 then 
@@ -139,7 +162,7 @@ Framework.CreateCommand({"jumppower", "jp"}, "Changes player jump power", functi
 	end
 end, true)
 
-Framework.CreateCommand({"walkspeed", "ws"}, "Changes player walk speed", function(Sender, Argument1, Argument2)
+Framework.CreateCommand({"walkspeed", "ws"}, "Changes target's walk speed", function(Sender, Argument1, Argument2)
 	local Targets 
 
 	if Argument2 then 
@@ -159,7 +182,7 @@ Framework.CreateCommand({"walkspeed", "ws"}, "Changes player walk speed", functi
 	end
 end, true)
 
-Framework.CreateCommand({"sit"}, "Forces player to sit", function(Sender, Argument)
+Framework.CreateCommand({"sit"}, "Forces localplayer to sit", function(Sender, Argument)
 	local Targets 
 
 	if Argument then 
@@ -180,7 +203,7 @@ Framework.CreateCommand({"sit"}, "Forces player to sit", function(Sender, Argume
 	end
 end, true)
 
-Framework.CreateCommand({"killfling", "kfling", "kf"}, "Flings target into the sky", function(Sender, Argument)
+Framework.CreateCommand({"killfling", "kfling", "kf"}, "Kills target then flings them into the sky", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
@@ -262,7 +285,7 @@ Framework.CreateCommand({"fling", "f"}, "Flings target into the sky", function(S
 	end
 end, true)
 
-Framework.CreateCommand({"noclip", "nc"}, "Toggles noclip", function(Sender)
+Framework.CreateCommand({"noclip", "nc"}, "Toggles noclip for localplayer", function(Sender)
 
 	if Framework.Engine["NoclipConnection"] then
 		return Framework.Disconnect("NoclipConnection")
@@ -280,13 +303,13 @@ Framework.CreateCommand({"noclip", "nc"}, "Toggles noclip", function(Sender)
 
 end, false)
 
-Framework.CreateCommand({"clip", "unnc"}, "Disables noclip", function()
+Framework.CreateCommand({"clip", "unnc"}, "Disables noclip for localplayer", function()
 	if Framework.Engine["NoclipConnection"] then
 		return Framework.Disconnect("NoclipConnection")
 	end
 end, false)
 
-Framework.CreateCommand({"reset", "re"}, "Resets target character", function(Sender, Argument)
+Framework.CreateCommand({"reset", "re"}, "Resets target's character", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
@@ -316,7 +339,7 @@ Framework.CreateCommand({"reset", "re"}, "Resets target character", function(Sen
 	end
 end, true)
 
-Framework.CreateCommand({"light", "fire", "set"}, "Set a target on fire", function(Sender, Argument)
+Framework.CreateCommand({"light", "fire", "set"}, "Sets target on fire", function(Sender, Argument)
 	local Targets 
 
 	if Argument then 
@@ -346,7 +369,7 @@ Framework.CreateCommand({"light", "fire", "set"}, "Set a target on fire", functi
 	end
 end, true)
 
-Framework.CreateCommand({"explode"}, "Explode a target", function(Sender, Argument)
+Framework.CreateCommand({"explode"}, "Explodes a target", function(Sender, Argument)
 	local Targets 
 
 	if Argument then 
@@ -364,7 +387,7 @@ Framework.CreateCommand({"explode"}, "Explode a target", function(Sender, Argume
 	end
 end, true)
 
-Framework.CreateCommand({"kill"}, "Kill a target", function(Sender, Argument)
+Framework.CreateCommand({"kill"}, "Kills a target", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
@@ -424,7 +447,7 @@ Framework.CreateCommand({"bring"}, "Brings a target to you", function(Sender, Ar
 
 end, true)
 
-Framework.CreateCommand({"clicktp", "ctp"}, "Toggles click teleport", function()
+Framework.CreateCommand({"clicktp", "ctp"}, "Toggles click teleport for localplayer", function()
 	
 	if Framework.Engine["ClickTeleport"] then 
 		return Framework.Disconnect("ClickTeleport")
@@ -445,13 +468,13 @@ Framework.CreateCommand({"clicktp", "ctp"}, "Toggles click teleport", function()
 	
 end, false)
 
-Framework.CreateCommand({"unclicktp", "unctp"}, "Disables click teleport", function()
+Framework.CreateCommand({"unclicktp", "unctp"}, "Disables click teleport for localplayer", function()
 	if Framework.Engine["ClickTeleport"] then 
 		return Framework.Disconnect("ClickTeleport")
 	end
 end, false)
 
-Framework.CreateCommand({"goto", "to"}, "Teleport yourself to a target", function(Sender, Argument)
+Framework.CreateCommand({"goto", "to"}, "Teleports localplayer to a target", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
@@ -526,7 +549,7 @@ Framework.CreateCommand({"view", "v"}, "Spectates target", function(Sender, Argu
 	end
 end, false)
 
-Framework.CreateCommand({"kick"}, "Kicks player from the server", function(Sender, Player, ...)
+Framework.CreateCommand({"kick"}, "Kicks target from the server", function(Sender, Player, ...)
 	
 	local Targets
 	
@@ -542,8 +565,7 @@ Framework.CreateCommand({"kick"}, "Kicks player from the server", function(Sende
 	
 end, true)
 
-if not Framework.Config.SS then 
-	
+if not Framework.Config.SS and Framework.Config.PrintOnExecution then 
 	warn("Loaded Sy's Admin " .. Framework.Config.Version)
 	warn("Command Prefix : " .. Framework.Config.Prefix)
 	warn("Command Count : " .. tostring(#Framework:GetCommands()))
