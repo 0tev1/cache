@@ -5,10 +5,10 @@ local Framework = {}
 
 Framework.Config = {
 	Prefix = "/";
-	Version = "v1.2.8";
-
+	Version = "v3.4.8";
+	VersionInfo = "WIP";
 	PrintOnExecution = true;
-
+	
 	SS = game:GetService("RunService"):IsServer()
 }
 
@@ -81,11 +81,11 @@ end
 
 Framework.Commands = {}
 
-function Framework.CreateCommand(alias, desc, callback, ssrequired)
+function Framework.CreateCommand(alias, desc, callback, serverside)
 	local Alias = alias or {"Alias"}
 	local Description = desc or "Description"
 	local Callback = callback or function() end
-	local SSRequired = ssrequired or false
+	local SSRequired = serverside or false
 
 	table.insert(Framework.Commands, {Alias, Description, Callback, SSRequired})
 end
@@ -120,6 +120,35 @@ function Framework:CallCommand(player, alias, args)
 end
 
 -- command creation 
+
+Framework.CreateCommand({"settime", "time"}, "Sets ingame time", function(Sender, Argument1)
+	local Time = tonumber(Argument1) or 0
+	game:GetService("Lighting").ClockTime = Time
+end, true)
+
+Framework.CreateCommand({"void", "punish"}, "Voids target", function(Sender, Argument1)
+	local Targets 
+	
+	if Argument1 then 
+		Targets = Framework.GetPlayers(Sender, Argument1)
+	end
+	
+	if Targets then 
+		for _, Target in next, Targets do 
+			if Target and Target.Character then 
+				local Character = Target.Character or Target.CharacterAdded:wait() 
+				local Humanoid = Character:WaitForChild("Humanoid")
+				Character:SetPrimaryPartCFrame(CFrame.new(-44e22, 9e9, 44e22))
+				task.wait(1)
+				Character.PrimaryPart.Anchored = true 
+			end
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"runline", "run", "execute", "exec"}, "Executes a line of code through the server", function(Sender, ...)
+	loadstring(table.concat({...}, " "))()
+end, true)
 
 Framework.CreateCommand({"accessory", "hat"}, "Equips a hat to the localplayer", function(Sender, Argument1)
 	local ID = tonumber(Argument1) or 0
@@ -249,7 +278,6 @@ Framework.CreateCommand({"killfling", "kfling", "kf"}, "Kills target then flings
 					wait(.5)
 					BV:Destroy()
 				end)()
-
 			end
 
 		end
@@ -353,7 +381,7 @@ Framework.CreateCommand({"reset", "re"}, "Resets target's character", function(S
 	end
 end, true)
 
-Framework.CreateCommand({"light", "fire", "set"}, "Sets target on fire", function(Sender, Argument)
+Framework.CreateCommand({"light", "fire"}, "Sets target on fire", function(Sender, Argument)
 	local Targets 
 
 	if Argument then 
@@ -371,6 +399,9 @@ Framework.CreateCommand({"light", "fire", "set"}, "Sets target on fire", functio
 				Flame.Heat = 150
 				Flame.Size = 15
 
+				Humanoid.MaxHealth = 100
+				Humanoid.Health = 100
+
 				coroutine.wrap(function()
 					for i = Humanoid.Health, 0, -1 do 
 						Humanoid.Health = i
@@ -383,7 +414,7 @@ Framework.CreateCommand({"light", "fire", "set"}, "Sets target on fire", functio
 	end
 end, true)
 
-Framework.CreateCommand({"explode"}, "Explodes target", function(Sender, Argument)
+Framework.CreateCommand({"explode", "ex"}, "Explodes target", function(Sender, Argument)
 	local Targets 
 
 	if Argument then 
@@ -401,7 +432,7 @@ Framework.CreateCommand({"explode"}, "Explodes target", function(Sender, Argumen
 	end
 end, true)
 
-Framework.CreateCommand({"kill"}, "Kills target", function(Sender, Argument)
+Framework.CreateCommand({"kill", "k"}, "Kills target", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
@@ -422,7 +453,7 @@ Framework.CreateCommand({"kill"}, "Kills target", function(Sender, Argument)
 	end
 end, true)
 
-Framework.CreateCommand({"bring"}, "Brings target to you", function(Sender, Argument)
+Framework.CreateCommand({"bring", "b"}, "Brings target to you", function(Sender, Argument)
 	local Targets
 
 	if Argument then 
@@ -579,16 +610,25 @@ Framework.CreateCommand({"kick"}, "Kicks target from the server", function(Sende
 	
 end, true)
 
+Framework.CreateCommand({"shoobicorn", "shoobi", "unicorn", "uni"}, "Gives localplayer a shoobicorn", function(Sender)
+	local Character = Sender.Character or Sender.CharacterAdded:wait()
+	local Shoobicorn = game:GetService("ServerStorage")["Tools"]["Shoobicorn"]:Clone()
+	Shoobicorn.Parent = Sender.Backpack
+end, true)
+
+-- end
+
 if not Framework.Config.SS and Framework.Config.PrintOnExecution then 
-	warn("Loaded Sy's Admin " .. Framework.Config.Version)
-	warn("Command Prefix : " .. Framework.Config.Prefix)
-	warn("Command Count : " .. tostring(#Framework:GetCommands()))
 	
-	warn(string.rep("-", 50))
+	print("Loaded Da Host " .. Framework.Config.Version .. " [" .. Framework.Config.VersionInfo .. "]")
+	print("Command Prefix : " .. Framework.Config.Prefix)
+	print("Command Count : " .. tostring(#Framework:GetCommands()))
+	print(string.rep("-", 50))
 	
 	for _, x in next, Framework:GetCommands() do 
-		warn(x)
+		print(x)
 	end
+	
 end
 
 return Framework
