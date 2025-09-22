@@ -5,10 +5,10 @@ local Framework = {}
 
 Framework.Config = {
 	Prefix = "/";
-	Version = "v3.4.8";
-	VersionInfo = "WIP";
+	Version = "v3.8.12";
+	VersionInfo = "";
 	PrintOnExecution = true;
-	
+
 	SS = game:GetService("RunService"):IsServer()
 }
 
@@ -91,7 +91,7 @@ function Framework.CreateCommand(alias, desc, callback, serverside)
 end
 
 function Framework:GetCommands()
-	
+
 	local Commands = {}
 
 	for _, CData in next, Framework.Commands do 
@@ -121,18 +121,101 @@ end
 
 -- command creation 
 
+Framework.CreateCommand({"clearclones"}, "Clears all clones from the workspace", function(Sender)
+	for _, x in next, workspace.Utility.Clones:GetChildren() do 
+		x:Destroy()
+	end
+end, true)
+
+Framework.CreateCommand({"killclones"}, "Kills all clones in the workspace", function(Sender)
+	for _, x in next, workspace.Utility.Clones:GetChildren() do 
+		x:WaitForChild("Humanoid").Health = 0
+	end
+end, true)
+
+Framework.CreateCommand({"clonechar", "falsechar", "fakechar", "clone"}, "Clones the target's character", function(Sender, Argument1, Argument2)
+	
+	if not Argument1 then return end
+	
+	local TargetPlayers
+	
+	if Framework.GetPlayers(Sender, Argument1) then 
+		TargetPlayers = Framework.GetPlayers(Sender, Argument1)
+	else 
+		TargetPlayers = {"USERID"}
+	end
+	
+	for _, TargetPlayer in next, TargetPlayers do 
+		
+		local UserId
+		
+		if TargetPlayer == "USERID" then 
+			UserId = tonumber(Argument1)
+		else 
+			UserId = TargetPlayer.UserId
+		end
+		
+		if not UserId then continue end
+		
+		local CloneAmount = tonumber(Argument2) or 1
+		local HumanoidDescription = game:GetService("Players"):GetHumanoidDescriptionFromUserId(UserId)
+		local DescriptionInfo = game:GetService("Players"):GetCharacterAppearanceInfoAsync(UserId)
+		
+		local SenderCharacter = Sender.Character or Sender.CharacterAdded:wait()
+		local SenderCFrame = SenderCharacter:WaitForChild("HumanoidRootPart").CFrame
+		
+		for i = 1, CloneAmount do 
+			if DescriptionInfo["playerAvatarType"] == "R6" then 
+				local Rig = game:GetService("ServerStorage")["Clone Storage"].R6Rig:Clone()
+				Rig.Parent = workspace["Utility"]["Clones"]
+				Rig:WaitForChild("Humanoid"):ApplyDescription(HumanoidDescription)
+				Rig.Name = game:GetService("Players"):GetNameFromUserIdAsync(UserId)
+				Rig:FindFirstChild("HumanoidRootPart").CFrame = SenderCFrame * CFrame.new((5 * i), 0, 0)
+			elseif DescriptionInfo["playerAvatarType"] == "R15" then
+				local Rig = game:GetService("ServerStorage")["Clone Storage"].R15Rig:Clone()
+				Rig.Parent = workspace["Utility"]["Clones"]
+				Rig:WaitForChild("Humanoid"):ApplyDescription(HumanoidDescription)
+				Rig.Name = game:GetService("Players"):GetNameFromUserIdAsync(UserId)
+				Rig:FindFirstChild("HumanoidRootPart").CFrame = SenderCFrame * CFrame.new((5 * i), 0, 0)
+			end
+		end 
+	end
+end, true)
+
+Framework.CreateCommand({"openserver", "open"}, "Opens the server to non-whitelisted players", function(Sender)
+	local PlayerParser = game:GetService("ServerScriptService"):WaitForChild("Server Privatizer")
+	if PlayerParser.Enabled then 
+		PlayerParser.Enabled = false
+	end
+end, true)
+
+Framework.CreateCommand({"closeserver", "close"}, "Closes the server to non-whitelisted players", function(Sender)
+	local PlayerParser = game:GetService("ServerScriptService"):WaitForChild("Server Privatizer")
+	if not PlayerParser.Enabled then 
+		PlayerParser.Enabled = true
+	end
+end, true)
+
+Framework.CreateCommand({"stoptime", "stime", "freezetime", "ftime"}, "Stops daylight cycle", function(Sender)
+	game:GetService("Lighting"):FindFirstChild("Freeze").Value = true
+end, true)
+
+Framework.CreateCommand({"continuetime", "ctime", "unfreezetime", "unftime"}, "Continues daylight cycle", function(Sender)
+	game:GetService("Lighting"):FindFirstChild("Freeze").Value = false
+end, true)
+
 Framework.CreateCommand({"settime", "time"}, "Sets ingame time", function(Sender, Argument1)
 	local Time = tonumber(Argument1) or 0
 	game:GetService("Lighting").ClockTime = Time
 end, true)
 
-Framework.CreateCommand({"void", "punish"}, "Voids target", function(Sender, Argument1)
+Framework.CreateCommand({"void", "punish"}, "Teleports the target into the void", function(Sender, Argument1)
 	local Targets 
-	
+
 	if Argument1 then 
 		Targets = Framework.GetPlayers(Sender, Argument1)
 	end
-	
+
 	if Targets then 
 		for _, Target in next, Targets do 
 			if Target and Target.Character then 
@@ -146,33 +229,67 @@ Framework.CreateCommand({"void", "punish"}, "Voids target", function(Sender, Arg
 	end
 end, true)
 
-Framework.CreateCommand({"runline", "run", "execute", "exec"}, "Executes a line of code through the server", function(Sender, ...)
-	loadstring(table.concat({...}, " "))()
-end, true)
-
-Framework.CreateCommand({"accessory", "hat"}, "Equips a hat to the localplayer", function(Sender, Argument1)
-	local ID = tonumber(Argument1) or 0
-	
-	local Character = Sender.Character or Sender.CharacterAdded:wait() 
-	
-	local Model = game:GetService("InsertService"):LoadAsset(ID)
-	Model.Parent = workspace
-
-	local Accessory = Model:FindFirstChildOfClass("Accessory")
-	Accessory.Parent = Character
-	
-	Model:remove()
-end, true)
-
-Framework.CreateCommand({"headless", "nohead"}, "Gives localplayer headless", function(Sender, Argument1)
+Framework.CreateCommand({"invisible", "invis"}, "Makes the target's character invisible", function(Sender, Argument1)
 	local Targets
-	
+
 	if Argument1 then 
 		Targets = Framework.GetPlayers(Sender, Argument1)
 	else 
 		Targets = {Sender}
 	end
-	
+
+	if Targets then 
+		for _, Target in next, Targets do 
+			if Target.Character then 
+				for _, x in next, Target.Character:GetDescendants() do 
+					if x:IsA("BasePart") then 
+						x.Transparency = 1
+					elseif x:IsA("Decal") then 
+						x:Destroy()
+					end
+				end
+			end
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"runline", "run", "execute", "exec"}, "Executes a line of code through the server", function(Sender, ...)
+	loadstring(table.concat({...}, " "))()
+end, true)
+
+Framework.CreateCommand({"accessory", "hat"}, "Equips a hat to the target's character", function(Sender, Argument1, Argument2)
+	local ID = tonumber(Argument1) or 0
+
+	local Targets
+
+	if Argument2 then 
+		Targets = Framework.GetPlayers(Sender, Argument2)
+	else 
+		Targets = {Sender}
+	end
+
+	for _, Target in next, Targets do 
+		if Target.Character then
+			local Character = Target.Character			
+			local Model = game:GetService("InsertService"):LoadAsset(ID)
+			Model.Parent = workspace
+			local Accessory = Model:FindFirstChildOfClass("Accessory")
+			Accessory.Parent = Character
+			Model:remove()
+		end
+	end
+
+end, true)
+
+Framework.CreateCommand({"headless", "nohead"}, "Gives target headless", function(Sender, Argument1)
+	local Targets
+
+	if Argument1 then 
+		Targets = Framework.GetPlayers(Sender, Argument1)
+	else 
+		Targets = {Sender}
+	end
+
 	for _, Target in next, Targets do 
 		if Target and Target.Character then 
 			for _, x in next, Target.Character:GetChildren() do 
@@ -241,6 +358,56 @@ Framework.CreateCommand({"sit"}, "Forces localplayer to sit", function(Sender, A
 
 			if Humanoid then 
 				Humanoid.Sit = true
+			end
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"freeze", "anchor"}, "Freezes target's character in place", function(Sender, Argument)
+	local Targets
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	else 
+		Targets = {Sender}
+	end
+
+	if Targets then 
+		for _, Target in next, Targets do 
+			if Target.Character then 
+				local Character = Target.Character
+				coroutine.wrap(function()
+					for _, x in next, Character:GetChildren() do 
+						if x:IsA("MeshPart") or x:IsA("BasePart") or x:IsA("Part") then 
+							x.Anchored = true
+						end
+					end
+				end)()
+			end
+		end
+	end
+end, true)
+
+Framework.CreateCommand({"unfreeze", "unanchor"}, "Freezes target's character in place", function(Sender, Argument)
+	local Targets
+
+	if Argument then 
+		Targets = Framework.GetPlayers(Sender, Argument)
+	else 
+		Targets = {Sender}
+	end
+
+	if Targets then 
+		for _, Target in next, Targets do 
+			if Target.Character then 
+				local Character = Target.Character
+				coroutine.wrap(function()
+					for _, x in next, Character:GetChildren() do 
+						if x:IsA("MeshPart") or x:IsA("BasePart") or x:IsA("Part") then 
+							x.Anchored = false
+						end
+					end
+				end)()
 			end
 		end
 	end
@@ -348,6 +515,30 @@ end, false)
 Framework.CreateCommand({"clip", "unnc"}, "Disables noclip for localplayer", function()
 	if Framework.Engine["NoclipConnection"] then
 		return Framework.Disconnect("NoclipConnection")
+	end
+end, false)
+
+Framework.CreateCommand({"infinitejump", "infjump", "ij"}, "Toggles infinite jump for localplayer", function(Sender)
+
+	if Framework.Engine["InfiniteJump"] then 
+		return Framework.Disconnect("InfiniteJump")
+	end
+
+	Framework.SecureConnection(game:GetService("UserInputService").InputBegan:Connect(function(input)
+		if input.KeyCode == Enum.KeyCode.Space then 
+			local Character = Sender.Character
+			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+			if Humanoid:GetState() == Enum.HumanoidStateType.Jumping or Humanoid:GetState() == Enum.HumanoidStateType.Freefall then 
+				Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			end
+		end
+	end), "InfiniteJump")
+
+end, false)
+
+Framework.CreateCommand({"uninfinitejump", "uninfjump", "unij"}, "Disables infinite jump for localplayer", function(Sender)
+	if Framework.Engine["InfiniteJump"] then 
+		return Framework.Disconnect("InfiniteJump")
 	end
 end, false)
 
@@ -492,25 +683,25 @@ Framework.CreateCommand({"bring", "b"}, "Brings target to you", function(Sender,
 
 end, true)
 
-Framework.CreateCommand({"clicktp", "ctp"}, "Toggles click teleport for localplayer", function()
-	
+Framework.CreateCommand({"clickteleport", "clicktp", "ctp"}, "Toggles click teleport for localplayer", function()
+
 	if Framework.Engine["ClickTeleport"] then 
 		return Framework.Disconnect("ClickTeleport")
 	end
-	
+
 	local LocalPlayer = game:GetService("Players").LocalPlayer
 	local Mouse = LocalPlayer:GetMouse()
-	
+
 	Framework.SecureConnection(Mouse.Button1Down:Connect(function()
-		
+
 		local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:wait()
-		
+
 		if Character and Character.PrimaryPart then 
 			Character:SetPrimaryPartCFrame(CFrame.new(Mouse.Hit.p + Vector3.new(0, 2, 0)))
 		end	
-		
+
 	end), "ClickTeleport")
-	
+
 end, false)
 
 Framework.CreateCommand({"unclicktp", "unctp"}, "Disables click teleport for localplayer", function()
@@ -595,19 +786,27 @@ Framework.CreateCommand({"view", "v"}, "Spectates target", function(Sender, Argu
 end, false)
 
 Framework.CreateCommand({"kick"}, "Kicks target from the server", function(Sender, Player, ...)
-	
+
 	local Targets
-	
+
 	if Player then 
 		Targets = Framework.GetPlayers(Sender, Player)
 	end
-	
+
+	if not Framework.Config.Whitelist then 
+		return warn("Whitelist not set")
+	end
+
 	if Targets then 
 		for _, Target in next, Targets do 
-			Target:Kick(table.concat({...}, " "))
+			if not table.find(Framework.Config.Whitelist, Target.UserId) then
+				Target:Kick(table.concat({...}, " "))
+			else 
+				warn("Cannot kick whitelisted players")
+			end
 		end
 	end
-	
+
 end, true)
 
 Framework.CreateCommand({"shoobicorn", "shoobi", "unicorn", "uni"}, "Gives localplayer a shoobicorn", function(Sender)
@@ -619,16 +818,16 @@ end, true)
 -- end
 
 if not Framework.Config.SS and Framework.Config.PrintOnExecution then 
-	
+
 	print("Loaded Da Host " .. Framework.Config.Version .. " [" .. Framework.Config.VersionInfo .. "]")
 	print("Command Prefix : " .. Framework.Config.Prefix)
 	print("Command Count : " .. tostring(#Framework:GetCommands()))
-	print(string.rep("-", 50))
-	
+	print(string.rep("-", 75))
+
 	for _, x in next, Framework:GetCommands() do 
 		print(x)
 	end
-	
+
 end
 
 return Framework
