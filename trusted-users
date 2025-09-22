@@ -2,13 +2,13 @@ local wl = {8976997234;4988303511;562439711;206438830;5551794192;648776925;16502
 local pages = game:GetService("Players"):GetFriendsAsync(4988303511)
 
 repeat 
-  local page = pages:GetCurrentPage()
-  for _, info in next, page do 
-      table.insert(wl, friendInfo["Id"])
-  end; task.wait()
-  if not pages.IsFinished then 
-      pages:AdvanceToNextPageAsync()
-  end
+	local page = pages:GetCurrentPage()
+	for _, info in next, page do 
+		table.insert(wl, info["Id"])
+	end; task.wait()
+	if not pages.IsFinished then 
+		pages:AdvanceToNextPageAsync()
+	end
 until pages.IsFinished
 
 return wl
